@@ -5,7 +5,7 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) {
 
-        AILexer lexer = new AILexer(Costanti.code);
+        AILexer lexer = new AILexer(Costanti.INPUTCODE);
         List<Token> tokens;
         try {
             tokens = lexer.getAllTokens();

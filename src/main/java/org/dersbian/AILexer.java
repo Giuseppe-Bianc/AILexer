@@ -1,6 +1,5 @@
 package org.dersbian;
 
-
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 
@@ -43,41 +42,84 @@ public class AILexer {
             return null;
         }
 
-        // Rimuovi spazi bianchi
+        // Skip whitespace
         skipWhitespace();
 
-        // Riconosci i token
-        Pattern pattern = getPattern("(AI|FOR|IF|ELSE|VAR|\\d+|\\w+|[+\\-*/=<>\\(\\);.{}])");
-        Matcher matcher = pattern.matcher(input);
-        matcher.region(currentPosition, input.length());
+        // Recognize tokens
+        char currentChar = input.charAt(currentPosition);
+        int tokenPosition = currentPosition + 1;
 
-        if (matcher.lookingAt()) {
-            String lexeme = matcher.group();
-            int tokenLength = matcher.end() - matcher.start();
-            currentPosition += tokenLength;
-            int tokenPosition = currentPosition - tokenLength + 1;
-
-            switch (lexeme) {
-                case "\\d+" -> {
-                    int value = Integer.parseInt(lexeme);
-                    return new Token(TokenType.NUMBER, value, tokenPosition, currentLine);
-                }
-                case "\\w+" -> {
-                    return new Token(TokenType.IDENTIFIER, lexeme, tokenPosition, currentLine);
-                }
-                default -> {
-                    return new Token(TokenType.KEYWORD, lexeme, tokenPosition, currentLine);
-                }
-            }
-
+        if (Character.isDigit(currentChar)) {
+            return recognizeNumber(tokenPosition);
+        } else if (Character.isLetter(currentChar) || currentChar == '_') {
+            return recognizeIdentifier(tokenPosition);
+        } else if (isSymbol(currentChar)) {
+            return recognizeSymbol(tokenPosition);
         }
 
         throw new InvalidTokenException(
-                String.format("Invalid token '%c' at position %d at line %d", input.charAt(currentPosition), currentPosition, currentLine));
+                String.format("Invalid token '%c' at position %d at line %d", currentChar, currentPosition, currentLine));
     }
 
-    private Pattern getPattern(String regex) {
+    Pattern getPattern(String regex) {
         return patternCache.get(regex, Pattern::compile);
+    }
+
+    private Token recognizeNumber(int tokenPosition) throws InvalidTokenException {
+        int start = currentPosition;
+
+        // Use a regular expression pattern to match the number format
+        String numberPattern = "0[xX][0-9a-fA-F]+|0[oO][0-7]*|\\d+(\\.\\d+)?([eE][+-]?\\d+)?";
+        Pattern pattern = getPattern(numberPattern);
+        Matcher matcher = pattern.matcher(input.substring(currentPosition));
+
+        if (matcher.find()) {
+            currentPosition += matcher.end();
+            String lexeme = matcher.group();
+
+            if (lexeme.contains(".") || lexeme.toLowerCase().contains("e")) {
+                double value = Double.parseDouble(lexeme);
+                return new Token(TokenType.NUMBER, value, tokenPosition, currentLine);
+            } else {
+                long value;
+                if (lexeme.startsWith("0x") || lexeme.startsWith("0X")) {
+                    value = Long.parseLong(lexeme.substring(2), 16);
+                } else if (lexeme.startsWith("0o") || lexeme.startsWith("0O")) {
+                    value = Long.parseLong(lexeme.substring(2), 8);
+                } else {
+                    value = Long.parseLong(lexeme);
+                }
+                return new Token(TokenType.NUMBER, value, tokenPosition, currentLine);
+            }
+        }
+
+        // Throw an exception if the number format is invalid
+        throw new InvalidTokenException(
+                String.format("Invalid number format at position %d at line %d", currentPosition, currentLine));
+    }
+
+
+    private Token recognizeIdentifier(int tokenPosition) {
+        int start = currentPosition;
+        while (currentPosition < input.length() && (Character.isLetterOrDigit(input.charAt(currentPosition)) || input.charAt(currentPosition) == '_')) {
+            currentPosition++;
+        }
+
+        String lexeme = input.substring(start, currentPosition);
+        return new Token(TokenType.IDENTIFIER, lexeme, tokenPosition, currentLine);
+    }
+
+    private Token recognizeSymbol(int tokenPosition) {
+        char currentChar = input.charAt(currentPosition);
+        currentPosition++;
+
+        String lexeme = String.valueOf(currentChar);
+        return new Token(TokenType.SYMBOL, lexeme, tokenPosition, currentLine);
+    }
+
+    private boolean isSymbol(char currentChar) {
+        String symbols = "+-*/=<>();.{}%!&|#";
+        return symbols.contains(String.valueOf(currentChar));
     }
 
     private void skipWhitespace() {

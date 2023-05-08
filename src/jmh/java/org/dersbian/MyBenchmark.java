@@ -14,17 +14,17 @@ public class MyBenchmark {
 
     @Setup
     public void setup() {
-        lexer = new AILexer(Costanti.code);
+        lexer = new AILexer(Costanti.INPUTCODE);
     }
 
 
     @Benchmark
-    public void becmarkLexer() throws InvalidTokenException {
+    public void benchmarkLexer() throws InvalidTokenException {
         lexer.getAllTokens();
     }
 
     @Benchmark
-    public void becmarkLexer2() throws InvalidTokenException {
+    public void benchmarkLexer2() throws InvalidTokenException {
         AILexer llexer = new AILexer("");
         llexer.getAllTokens();
     }
