@@ -1,0 +1,33 @@
+plugins {
+    id 'java'
+    id 'application'
+    id "me.champeau.jmh" version "0.7.1"
+}
+
+group = 'org.dersbian'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+
+jmh {
+    fork = 1
+    duplicateClassesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+dependencies {
+    implementation("org.openjdk.jmh:jmh-core:1.36")
+    annotationProcessor("org.openjdk.jmh:jmh-generator-annprocess:1.36")
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.5'
+    implementation 'org.jetbrains:annotations:24.0.0'
+    implementation 'org.openjdk.jmh:jmh-core:1.36'
+    annotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.36'
+    testImplementation platform('org.junit:junit-bom:5.9.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
+}
+
+test {
+    useJUnitPlatform()
+}
